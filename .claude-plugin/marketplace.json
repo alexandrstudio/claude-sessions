@@ -1,0 +1,13 @@
+{
+  "name": "claude-sessions",
+  "owner": {
+    "name": "alexandrstudio"
+  },
+  "description": "The /sessions mod for Claude Code: browse every session across all projects.",
+  "plugins": [
+    {
+      "name": "sessions",
+      "source": "./"
+    }
+  ]
+}
