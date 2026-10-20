@@ -1,0 +1,21 @@
+{
+  "name": "waiting",
+  "version": "0.1.0",
+  "description": "Shows, in every open Claude Code session, which other sessions are waiting for you, and sends a macOS notification when one starts waiting.",
+  "author": { "name": "alexandrstudio" },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "notify": {
+      "type": "boolean",
+      "title": "Notify",
+      "description": "Send a notification when this session has waited for you for 15 seconds.",
+      "default": true
+    },
+    "showYourTurn": {
+      "type": "boolean",
+      "title": "Show finished sessions",
+      "description": "Also list sessions that finished their turn and are waiting for your next prompt.",
+      "default": false
+    }
+  }
+}

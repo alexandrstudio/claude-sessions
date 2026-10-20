@@ -1,13 +1,9 @@
 {
   "name": "claude-sessions",
-  "owner": {
-    "name": "alexandrstudio"
-  },
-  "description": "The /sessions mod for Claude Code: browse every session across all projects.",
+  "owner": { "name": "alexandrstudio" },
+  "description": "Claude Code mods for working across many sessions: /sessions lists them all, waiting tells you which one needs you.",
   "plugins": [
-    {
-      "name": "sessions",
-      "source": "./"
-    }
+    { "name": "sessions", "source": "./sessions" },
+    { "name": "waiting", "source": "./waiting" }
   ]
 }
