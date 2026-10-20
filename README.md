@@ -125,3 +125,5 @@ and restart the sessions you already have open.
 ## License
 
 MIT
+
+Workflow stage: solo
