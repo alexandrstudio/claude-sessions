@@ -1,5 +1,7 @@
 # claude-sessions: Claude Code mods for many sessions
 
+![The /sessions pane: toolbar buttons and every session across projects](docs/sessions.svg)
+
 Two mods for people who keep several Claude Code sessions going across
 different projects:
 
@@ -34,8 +36,6 @@ Add plugin.
 `/sessions` opens a pane listing every Claude Code session you have had, across
 **all** projects, newest first. `/resume` only shows the folder you are in; this
 shows them all, and gives you the command to continue any of them.
-
-![The /sessions pane: toolbar buttons and every session across projects](docs/sessions.svg)
 
 Each row: how long ago, the project folder, the session's title (or first
 prompt), and how many prompts you typed. Blue folders are on this machine,
