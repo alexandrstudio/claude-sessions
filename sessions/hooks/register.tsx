@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { IndexState, SessionRow, View } from '../types'
+import type { Editing, IndexState, SessionRow, View } from '../types'
 import { INDEXER } from './indexer'
 import { ARCHIVER, MOVER, RESTORE } from './scripts'
 
@@ -31,6 +31,9 @@ const notice = atom({ plugin: 'sessions', key: 'notice' } as const, '')
 const view = atom({ plugin: 'sessions', key: 'view' } as const, 'list' as View)
 const confirmMove = atom({ plugin: 'sessions', key: 'confirmMove' } as const, null as string | null)
 const archiveStatus = atom({ plugin: 'sessions', key: 'archiveStatus' } as const, '')
+// Which text field is open, if any. Fields appear only on request, so the
+// pane's keys go to its buttons the rest of the time.
+const editing = atom({ plugin: 'sessions', key: 'editing' } as const, null as Editing)
 
 const shellQuote = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`
 
@@ -182,6 +185,7 @@ async function go($: EngineInterface, next: View) {
   await update($, view, () => next)
   await update($, selected, () => null)
   await update($, confirmMove, () => null)
+  await update($, editing, () => null)
   await update($, notice, () => '')
 }
 
@@ -190,11 +194,11 @@ const openPane = ($: EngineInterface) =>
 
 const INFO: [string, string][] = [
   ['The list', 'Every session in ~/.claude/projects, plus the archive folder when one is set. Newest first; blue folders are on this Mac, yellow ones only in the archive, ● marks a session running now.'],
-  ['Filter', 'Type words to match title, first prompt or folder. :archived shows archive-only sessions, :local the ones not archived yet, :running the open ones. Enter opens the first match.'],
-  ['A session', 'c copies the resume command (paste it in a new terminal tab). r restores an archive-only session to this Mac. m moves it to the archive: removes the copy on this Mac once the archive holds an identical one; press m twice. b goes back.'],
+  ['Filter', 'Press [ Filter ] and type words to match title, first prompt or folder. :archived shows archive-only sessions, :local the ones not archived yet, :running the open ones. Enter keeps the filter; [ Clear ] removes it.'],
+  ['A session', 'Click a row. [ Copy resume command ] puts it on the clipboard (paste it in a new terminal tab). [ Restore to this Mac ] brings back an archive-only session. [ Move to archive ] removes the copy on this Mac once the archive holds an identical one; press it twice.'],
   ['Archive', 'With an archive folder set, the mod copies new and changed sessions there when a session starts and every 6 hours (turn it off in settings). It never deletes from the archive. An archive on an external drive waits until the drive is plugged in.'],
   ['Keep sessions longer', 'Claude Code deletes transcripts after 30 days by default. Set "cleanupPeriodDays": 36500 in ~/.claude/settings.json to keep them; with the archive running you can also leave the default and let the archive keep the old ones.'],
-  ['Keys', 'ctrl+x tab (or a click) gives the pane the keys; Esc hands them back to the prompt. Then: 0 refresh · i this page · s settings. Tab walks the buttons.'],
+  ['Buttons and keys', 'Click any [ button ] or row. Without a mouse: ctrl+x tab gives the pane the keys, Tab walks the buttons, Enter presses one, and each button letter is a shortcut (f filter, i info, s settings, 0 refresh, c copy, b back). Esc hands the keys back to the prompt.'],
 ]
 
 export const register: Register = (on, options) => {
@@ -237,6 +241,7 @@ export const register: Register = (on, options) => {
     const message = await read($, notice)
     const current = await read($, view)
     const status = await read($, archiveStatus)
+    const field = await read($, editing)
     const width = Math.max(30, e.props.bodyColumns)
 
     const back = <Button key="back" label="Back" hotkey="b" onPress={() => go($, 'list')} />
@@ -274,15 +279,31 @@ export const register: Register = (on, options) => {
           <Text bold>Archive settings</Text>
           <Text> </Text>
           <Text>Archive folder: {archiveDir || <Text dimColor>none (no archive)</Text>}</Text>
-          {Input && (
-            <Input
-              key="archiveDir"
-              label="New folder: "
-              placeholder="/Volumes/MyDrive/claude-sessions/projects (empty: no archive)"
-              value={archiveDir}
-              submitLabel="save"
-              onSubmit={(value: string) => setOption($, 'archiveDir', value.trim())}
-            />
+          {Input && field === 'folder' ? (
+            <Box flexDirection="row" gap={2}>
+              <Input
+                key="archiveDir"
+                label="New folder: "
+                placeholder="/Volumes/MyDrive/claude-sessions/projects (empty: no archive)"
+                value={archiveDir}
+                submitLabel="save"
+                autoFocus
+                onSubmit={async (value: string) => {
+                  await update($, editing, () => null)
+                  await setOption($, 'archiveDir', value.trim())
+                }}
+              />
+              <Button key="cancel-folder" label="Cancel" onPress={() => update($, editing, () => null)} />
+            </Box>
+          ) : (
+            Input && (
+              <Button
+                key="change-folder"
+                label={archiveDir ? 'Change folder' : 'Set folder'}
+                hotkey="f"
+                onPress={() => update($, editing, () => 'folder')}
+              />
+            )
           )}
           <Text dimColor wrap="wrap">
             The folder gets the same layout as ~/.claude/projects and is created on the first run. On an external drive
@@ -376,26 +397,39 @@ export const register: Register = (on, options) => {
     return (
       <Box flexDirection="column">
         {keysHint}
-        {Input && (
-          <Input
-            key="filter"
-            label="Filter: "
-            placeholder="words, or :archived :local :running"
-            value={needle}
-            submitLabel="open first"
-            onInput={(value: string) => update($, filter, () => value)}
-            onSubmit={() => {
-              const first = shown[0]
-              if (first) void update($, selected, () => first.id)
-            }}
-          />
-        )}
         <Box flexDirection="row" gap={2}>
+          {Input && <Button key="filter-edit" label="Filter" hotkey="f" onPress={() => update($, editing, () => 'filter')} />}
+          <Button key="info" label="Info" hotkey="i" onPress={() => go($, 'info')} />
+          <Button key="to-settings" label="Settings" hotkey="s" onPress={() => go($, 'settings')} />
+          <Button key="refresh" label="Refresh" hotkey="0" onPress={() => refresh($)} />
           <Text dimColor>{header}</Text>
-          <Button key="refresh" plain label="refresh" hotkey="0" onPress={() => refresh($)} />
-          <Button key="to-settings" plain label="settings" hotkey="s" onPress={() => go($, 'settings')} />
-          <Button key="info" plain label="info" hotkey="i" onPress={() => go($, 'info')} />
         </Box>
+        {Input && field === 'filter' && (
+          <Box flexDirection="row" gap={2}>
+            <Input
+              key="filter"
+              label="Filter: "
+              placeholder="words, or :archived :local :running"
+              value={needle}
+              submitLabel="done"
+              autoFocus
+              onInput={(value: string) => update($, filter, () => value)}
+              onSubmit={async (value: string) => {
+                await update($, filter, () => value.trim())
+                await update($, editing, () => null)
+              }}
+            />
+            <Button key="filter-done" label="Done" onPress={() => update($, editing, () => null)} />
+          </Box>
+        )}
+        {field !== 'filter' && needle !== '' && (
+          <Box flexDirection="row" gap={2}>
+            <Text>
+              Filter: <Text color="cyan">{needle}</Text>
+            </Text>
+            <Button key="filter-clear" label="Clear" onPress={() => update($, filter, () => '')} />
+          </Box>
+        )}
         {state.error && <Text color="red">Could not read sessions: {state.error}</Text>}
         {shown.slice(0, MAX_ROWS).map(s => (
           <Button key={s.id} plain onPress={() => update($, selected, () => s.id)}>

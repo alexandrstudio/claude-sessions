@@ -46,19 +46,27 @@ prompt), and how many prompts you typed. Blue folders are on this machine,
 yellow ones exist only in the archive (see below), and ● marks a session that
 is running right now.
 
-- **Type** to filter (words match title, first prompt, folder). `:archived`
-  shows archive-only sessions, `:local` the ones not archived yet, `:running`
-  the open ones. Enter opens the first match.
-- **Pick a row** for the details and the resume command, `cd '<folder>' && claude -r <id>`:
-  - `c` copies the command; paste it in a new terminal tab.
-  - `r` restores an archive-only session, so the command works again.
-  - `m` moves a session to the archive: it removes the copy on this machine,
-    but only once the archive holds an identical one (press `m` twice).
-  - `b` goes back to the list.
-- The pane takes the keys when it opens; if your typing still goes to the
-  prompt, press **ctrl+x tab** (or click the pane). Esc hands the keys back.
-- `i` shows all of this inside the pane, `s` opens the archive settings,
-  `0` refreshes the list, Esc closes the pane.
+Everything is a button: click it (Claude Code's fullscreen mode reports
+clicks) or Tab to it and press Enter.
+
+```
+[ Filter ]  [ Info ]  [ Settings ]  [ Refresh ]   71 of 71 sessions · 3 archive-only
+```
+
+- **[ Filter ]** opens a text field: words match title, first prompt and
+  folder; `:archived` shows archive-only sessions, `:local` the ones not
+  archived yet, `:running` the open ones. Enter keeps the filter,
+  **[ Clear ]** removes it. Outside the field, your typing never lands in it.
+- **Click a row** for the details and the resume command, `cd '<folder>' && claude -r <id>`:
+  **[ Copy resume command ]** (paste it in a new terminal tab),
+  **[ Restore to this Mac ]** for an archive-only session, **[ Move to archive ]**
+  to remove the copy on this machine once the archive holds an identical one
+  (press it twice), **[ Back ]**.
+- **[ Info ]** explains all of this inside the pane; **[ Settings ]** holds the
+  archive folder and the automatic archive.
+- Without a mouse: **ctrl+x tab** gives the pane the keys, each button's letter
+  is a shortcut (`f` filter, `i` info, `s` settings, `0` refresh, `c` copy,
+  `b` back), and Esc hands the keys back to the prompt.
 
 Requires `python3` on your `PATH` (it reads the transcripts and caches what it
 read in `~/.claude/cache/sessions-mod-index.json`).
@@ -69,14 +77,14 @@ Give the mod an archive folder and it keeps a second copy of your sessions
 there, so `/sessions` still lists them after they are gone from
 `~/.claude/projects`, and you can move old ones off your machine.
 
-- **Set the folder** in the pane (`s`, then type the folder and Enter) or in
+- **Set the folder** in the pane (**[ Settings ]** → **[ Set folder ]**, type it, Enter) or in
   `/config` under **sessions → Archive folder**, for example
   `/Volumes/MyDrive/claude-sessions/projects`. It is created on the first run.
   Leave it empty for no archive.
 - **Archiving runs by itself** when a session starts and every 6 hours,
   copying new and changed sessions. It never deletes from the archive. An
   archive on an external drive waits until the drive is plugged in. Turn it
-  off in the settings (`t`) and use **Archive now** (`a`) instead.
+  off in the settings and use **[ Archive now ]** instead.
 
 Don't put the archive in a git repository you push: transcripts hold whatever
 the sessions saw, file contents and command output included.

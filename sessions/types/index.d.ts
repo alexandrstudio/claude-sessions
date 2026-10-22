@@ -25,6 +25,8 @@ export type IndexState = {
 
 export type View = 'list' | 'info' | 'settings'
 
+export type Editing = 'filter' | 'folder' | null
+
 declare module 'claude-code' {
   interface PluginState {
     sessions: {
@@ -36,6 +38,7 @@ declare module 'claude-code' {
       // The session whose "move to archive" waits for a second press.
       confirmMove: string | null
       archiveStatus: string
+      editing: Editing
     }
   }
 }
