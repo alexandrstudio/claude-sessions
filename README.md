@@ -35,11 +35,7 @@ Add plugin.
 **all** projects, newest first. `/resume` only shows the folder you are in; this
 shows them all, and gives you the command to continue any of them.
 
-```
-  12m  code/notes                 Cross-project session browser   4
-   2h  acme/video-service         Retry logic for uploads        85
-   3d  acme/location-data         Spike for the map layer         2
-```
+![The /sessions pane: toolbar buttons and every session across projects](docs/sessions.svg)
 
 Each row: how long ago, the project folder, the session's title (or first
 prompt), and how many prompts you typed. Blue folders are on this machine,
@@ -48,10 +44,6 @@ is running right now.
 
 Everything is a button: click it (Claude Code's fullscreen mode reports
 clicks) or Tab to it and press Enter.
-
-```
-[ Filter ]  [ Info ]  [ Settings ]  [ Refresh ]   71 of 71 sessions · 3 archive-only
-```
 
 - **[ Filter ]** opens a text field: words match title, first prompt and
   folder; `:archived` shows archive-only sessions, `:local` the ones not
@@ -62,6 +54,9 @@ clicks) or Tab to it and press Enter.
   **[ Restore to this Mac ]** for an archive-only session, **[ Move to archive ]**
   to remove the copy on this machine once the archive holds an identical one
   (press it twice), **[ Back ]**.
+
+  ![One session: details, resume command and actions](docs/sessions-detail.svg)
+
 - **[ Info ]** explains all of this inside the pane; **[ Settings ]** holds the
   archive folder and the automatic archive.
 - Without a mouse: **ctrl+x tab** gives the pane the keys, each button's letter
@@ -120,9 +115,7 @@ permission prompt or a question while you are in another. With **waiting**
 installed, every session shows a line above its prompt while another session
 needs you:
 
-```
-⏳ 2 waiting · acme/video-service: permission for Bash (3m) · code/notes: has a question
-```
+![The waiting line above the prompt: two other sessions need you](docs/waiting.svg)
 
 The line is only there while something waits. A session that has waited for 15
 seconds also sends a notification, *"Claude is waiting for you: <folder>:

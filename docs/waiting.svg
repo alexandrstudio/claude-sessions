@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="98" viewBox="0 0 1000 98" role="img" aria-label="The waiting line above the prompt: two other sessions need you">
+<title>The waiting line above the prompt: two other sessions need you</title>
+<rect width="1000" height="98" rx="10" fill="#1e1f22"/>
+<g font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="14" xml:space="preserve">
+<text x="24.0" y="34.0" fill="#d7ba7d">⏳ 2 waiting</text>
+<text x="124.8" y="34.0" fill="#7f848e"> · </text>
+<text x="150.0" y="34.0" fill="#d4d4d4">acme/video-service: permission for Bash (3m) · code/notes: has a question</text>
+<rect x="10" y="46" width="980" height="38" rx="6" fill="none" stroke="#3a3d41"/>
+<text x="24.0" y="70.0" fill="#7f848e">&gt; </text>
+<text x="40.8" y="70.0" fill="#d4d4d4">fix the flaky upload test</text>
+</g>
+</svg>
