@@ -1,15 +1,23 @@
 {
   "name": "sessions",
-  "version": "0.1.0",
-  "description": "Browse every Claude Code session across all projects (and an optional archive folder); copy the resume command or restore an archived session.",
-  "author": { "name": "alexandrstudio" },
+  "version": "0.2.0",
+  "description": "Browse every Claude Code session across all projects; archive them to another folder, move old ones off this Mac, restore them.",
+  "author": {
+    "name": "alexandrstudio"
+  },
   "types": "./types/index.d.ts",
   "userConfig": {
     "archiveDir": {
       "type": "string",
       "title": "Archive folder",
-      "description": "Folder holding archived copies of ~/.claude/projects (same layout). Empty: no archive.",
+      "description": "Folder the mod copies ~/.claude/projects into (same layout), e.g. /Volumes/MyDrive/claude-sessions/projects. Empty: no archive.",
       "default": ""
+    },
+    "autoArchive": {
+      "type": "boolean",
+      "title": "Archive automatically",
+      "description": "Copy new and changed sessions to the archive folder when a session starts and every 6 hours.",
+      "default": true
     }
   }
 }

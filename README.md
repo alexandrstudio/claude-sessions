@@ -43,52 +43,63 @@ shows them all, and gives you the command to continue any of them.
 
 Each row: how long ago, the project folder, the session's title (or first
 prompt), and how many prompts you typed. Blue folders are on this machine,
-yellow ones exist only in the archive (see below).
+yellow ones exist only in the archive (see below), and ● marks a session that
+is running right now.
 
-- **Type** to filter (words match title, first prompt, folder). Enter opens the first match.
+- **Type** to filter (words match title, first prompt, folder). `:archived`
+  shows archive-only sessions, `:local` the ones not archived yet, `:running`
+  the open ones. Enter opens the first match.
 - **Pick a row** for the details and the resume command, `cd '<folder>' && claude -r <id>`:
   - `c` copies the command; paste it in a new terminal tab.
   - `r` restores an archive-only session, so the command works again.
+  - `m` moves a session to the archive: it removes the copy on this machine,
+    but only once the archive holds an identical one (press `m` twice).
   - `b` goes back to the list.
-- `0` refreshes the list, Esc closes the pane.
+- `i` shows all of this inside the pane, `s` opens the archive settings,
+  `0` refreshes the list, Esc closes the pane.
 
 Requires `python3` on your `PATH` (it reads the transcripts and caches what it
 read in `~/.claude/cache/sessions-mod-index.json`).
 
-### Keep your sessions longer (recommended)
+### The archive
 
-Claude Code deletes transcripts older than **30 days** by default, so the list
-only reaches back a month. To keep them, set `cleanupPeriodDays` in
-`~/.claude/settings.json`:
+Give the mod an archive folder and it keeps a second copy of your sessions
+there, so `/sessions` still lists them after they are gone from
+`~/.claude/projects`, and you can move old ones off your machine.
+
+- **Set the folder** in the pane (`s`, then type the folder and Enter) or in
+  `/config` under **sessions → Archive folder**, for example
+  `/Volumes/MyDrive/claude-sessions/projects`. It is created on the first run.
+  Leave it empty for no archive.
+- **Archiving runs by itself** when a session starts and every 6 hours,
+  copying new and changed sessions. It never deletes from the archive. An
+  archive on an external drive waits until the drive is plugged in. Turn it
+  off in the settings (`t`) and use **Archive now** (`a`) instead.
+
+Don't put the archive in a git repository you push: transcripts hold whatever
+the sessions saw, file contents and command output included.
+
+### Keep your sessions longer
+
+Claude Code deletes transcripts older than **30 days** by default. With the
+archive running, that is fine: the archive keeps the old ones. Without an
+archive, set `cleanupPeriodDays` in `~/.claude/settings.json` to keep them:
 
 ```json
 { "cleanupPeriodDays": 36500 }
 ```
 
 Transcripts grow (roughly 0.5–1 GB a month of heavy use), so keep an eye on
-`~/.claude/projects`, or archive them elsewhere as below.
+`~/.claude/projects`.
 
-### Optional: an archive folder
+### Optional: archive while Claude Code is closed
 
-Keep a second copy of your sessions on another disk, and `/sessions` lists those
-too, even after they are gone from `~/.claude/projects`.
-
-1. Copy them nightly with [`sessions/extras/archive-sessions.sh`](sessions/extras/archive-sessions.sh):
-
-   ```
-   sessions/extras/archive-sessions.sh /Volumes/MyDrive/claude-sessions
-   ```
-
-   It only adds and updates, never deletes, and skips the run when the drive is
-   not plugged in. On macOS, [`sessions/extras/claude-session-archive.plist`](sessions/extras/claude-session-archive.plist)
-   runs it daily: fill in the two paths and follow the comment at its top. The
-   first run may ask whether `bash` may access a removable volume.
-
-2. Point the mod at it: in `/config`, set **sessions → Archive folder** to
-   `/Volumes/MyDrive/claude-sessions/projects`.
-
-Don't put the archive in a git repository you push: transcripts hold whatever
-the sessions saw, file contents and command output included.
+The mod only archives while a session is open. To archive on a schedule
+regardless, [`sessions/extras/archive-sessions.sh`](sessions/extras/archive-sessions.sh)
+does the same copy from a shell, and on macOS
+[`sessions/extras/claude-session-archive.plist`](sessions/extras/claude-session-archive.plist)
+runs it daily: fill in the two paths and follow the comment at its top. Give
+the script the folder *above* `projects`; it writes into `projects/` inside it.
 
 ---
 

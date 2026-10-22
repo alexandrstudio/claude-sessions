@@ -5,7 +5,7 @@
 export const INDEXER = String.raw`
 import json, os, sys
 
-live_root, archive_root, cache_path = sys.argv[1], sys.argv[2], sys.argv[3]
+live_root, archive_root, cache_path, running_dir = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 archive_root = os.path.expanduser(archive_root) if archive_root else ''
 
 try:
@@ -58,6 +58,21 @@ def read_session(path):
                     first = text_of(row['message']['content']).strip()
     return {'cwd': cwd, 'title': custom or title, 'first': (first or '')[:300], 'prompts': prompts}
 
+# Claude Code keeps one file per running session; one whose process is gone
+# is left over from a crash.
+running = set()
+if os.path.isdir(running_dir):
+    for name in os.listdir(running_dir):
+        if not name.endswith('.json'):
+            continue
+        try:
+            with open(os.path.join(running_dir, name)) as f:
+                entry = json.load(f)
+            os.kill(int(entry['pid']), 0)
+            running.add(entry['sessionId'])
+        except Exception:
+            continue
+
 sessions = {}
 fresh_cache = {}
 for source, root in (('live', live_root), ('archive', archive_root)):
@@ -77,7 +92,12 @@ for source, root in (('live', live_root), ('archive', archive_root)):
                 continue
             sid = name[:-6]
             if sid in sessions:
-                sessions[sid]['inArchive'] = sessions[sid]['inArchive'] or source == 'archive'
+                if source == 'archive':
+                    live = sessions[sid]
+                    # Archive copies keep the live file's mtime, so an equal
+                    # size and mtime mean the copy is current.
+                    live['inArchive'] = True
+                    live['archiveCurrent'] = st.st_size == live['size'] and int(st.st_mtime) == live['mtime']
                 continue
             stamp = [st.st_size, int(st.st_mtime)]
             hit = cache.get(path)
@@ -87,7 +107,8 @@ for source, root in (('live', live_root), ('archive', archive_root)):
                 continue
             sessions[sid] = dict(info, id=sid, project=project, path=path,
                                  mtime=int(st.st_mtime), size=st.st_size,
-                                 isLive=source == 'live', inArchive=source == 'archive')
+                                 isLive=source == 'live', inArchive=source == 'archive',
+                                 archiveCurrent=source == 'archive', isRunning=sid in running)
 
 try:
     os.makedirs(os.path.dirname(cache_path), exist_ok=True)

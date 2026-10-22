@@ -10,6 +10,10 @@ export type SessionRow = {
   size: number
   isLive: boolean
   inArchive: boolean
+  // The archive copy matches the live file (size and mtime), so the live one
+  // can be removed safely.
+  archiveCurrent: boolean
+  isRunning: boolean
 }
 
 export type IndexState = {
@@ -19,6 +23,8 @@ export type IndexState = {
   error?: string
 }
 
+export type View = 'list' | 'info' | 'settings'
+
 declare module 'claude-code' {
   interface PluginState {
     sessions: {
@@ -26,6 +32,10 @@ declare module 'claude-code' {
       filter: string
       selected: string | null
       notice: string
+      view: View
+      // The session whose "move to archive" waits for a second press.
+      confirmMove: string | null
+      archiveStatus: string
     }
   }
 }
