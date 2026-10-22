@@ -55,6 +55,8 @@ is running right now.
   - `m` moves a session to the archive: it removes the copy on this machine,
     but only once the archive holds an identical one (press `m` twice).
   - `b` goes back to the list.
+- The pane takes the keys when it opens; if your typing still goes to the
+  prompt, press **ctrl+x tab** (or click the pane). Esc hands the keys back.
 - `i` shows all of this inside the pane, `s` opens the archive settings,
   `0` refreshes the list, Esc closes the pane.
 

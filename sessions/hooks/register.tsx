@@ -11,6 +11,7 @@ const MAX_ROWS = 200
 // The first archive run waits until the session has settled in.
 const FIRST_ARCHIVE_MS = 20_000
 const ARCHIVE_EVERY_MS = 6 * 60 * 60 * 1000
+const FOCUS_RETRY_MS = 300
 
 // Settings, set again on every (re)load: a change in /config or in the pane's
 // settings view reloads the module with the new values.
@@ -193,7 +194,7 @@ const INFO: [string, string][] = [
   ['A session', 'c copies the resume command (paste it in a new terminal tab). r restores an archive-only session to this Mac. m moves it to the archive: removes the copy on this Mac once the archive holds an identical one; press m twice. b goes back.'],
   ['Archive', 'With an archive folder set, the mod copies new and changed sessions there when a session starts and every 6 hours (turn it off in settings). It never deletes from the archive. An archive on an external drive waits until the drive is plugged in.'],
   ['Keep sessions longer', 'Claude Code deletes transcripts after 30 days by default. Set "cleanupPeriodDays": 36500 in ~/.claude/settings.json to keep them; with the archive running you can also leave the default and let the archive keep the old ones.'],
-  ['Keys', '0 refresh · i this page · s settings · Esc closes the pane. Tab walks the buttons.'],
+  ['Keys', 'ctrl+x tab (or a click) gives the pane the keys; Esc hands them back to the prompt. Then: 0 refresh · i this page · s settings. Tab walks the buttons.'],
 ]
 
 export const register: Register = (on, options) => {
@@ -218,8 +219,11 @@ export const register: Register = (on, options) => {
     await go($, 'list')
     void refresh($)
     await openPane($)
+    // The surface grants focus only to an idle, empty prompt, which it is not
+    // while this command still runs; asking again just after it ends lands.
+    $.clock.after(FOCUS_RETRY_MS, () => void openPane($))
 
-    return { text: 'Sessions pane opened.' }
+    return { text: 'Sessions pane opened (ctrl+x tab moves the keys to it).' }
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
@@ -236,11 +240,16 @@ export const register: Register = (on, options) => {
     const width = Math.max(30, e.props.bodyColumns)
 
     const back = <Button key="back" label="Back" hotkey="b" onPress={() => go($, 'list')} />
+    // Keys reach the pane only while it holds them; say how to hand them over.
+    const keysHint = !e.props.isFocused && (
+      <Text dimColor>ctrl+x tab (or a click) to use this pane · Esc gives the keys back</Text>
+    )
     const footer = message !== '' && <Text color="green" wrap="wrap">{message}</Text>
 
     if (current === 'info') {
       return (
         <Box flexDirection="column">
+          {keysHint}
           <Text bold>What /sessions can do</Text>
           {INFO.map(([title, text]) => (
             <Box flexDirection="column" key={title}>
@@ -261,6 +270,7 @@ export const register: Register = (on, options) => {
     if (current === 'settings') {
       return (
         <Box flexDirection="column">
+          {keysHint}
           <Text bold>Archive settings</Text>
           <Text> </Text>
           <Text>Archive folder: {archiveDir || <Text dimColor>none (no archive)</Text>}</Text>
@@ -307,6 +317,7 @@ export const register: Register = (on, options) => {
 
       return (
         <Box flexDirection="column">
+          {keysHint}
           <Text bold wrap="truncate">{picked.title ?? oneLine(picked.first)}</Text>
           <Text dimColor>
             {day(picked.mtime)} · {picked.prompts} prompts · {Math.round(picked.size / 1024)} KB · {whereText(picked)}
@@ -364,6 +375,7 @@ export const register: Register = (on, options) => {
 
     return (
       <Box flexDirection="column">
+        {keysHint}
         {Input && (
           <Input
             key="filter"

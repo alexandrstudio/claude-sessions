@@ -1,6 +1,6 @@
 {
   "name": "sessions",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Browse every Claude Code session across all projects; archive them to another folder, move old ones off this Mac, restore them.",
   "author": {
     "name": "alexandrstudio"

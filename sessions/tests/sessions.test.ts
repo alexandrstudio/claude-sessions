@@ -158,3 +158,14 @@ test('without an archive folder it lists local sessions only', async ($, on) => 
   expect(await ui.find({ key: 'move' })).toBeUndefined()
   await ui.unmount()
 })
+
+test('an unfocused pane says how to give it the keys', async ($, on) => {
+  fakeHost(on)
+  const blurred = { ...PANE, props: { ...PANE.props, isFocused: false } }
+  const ui = await $.ui.mount({ plugin: 'sessions', surface: 'terminal', ...blurred })
+  expect(await ui.find({ text: /ctrl\+x tab/ })).toBeDefined()
+  await ui.unmount()
+  const focused = await $.ui.mount({ plugin: 'sessions', surface: 'terminal', ...PANE })
+  expect(await focused.find({ text: /ctrl\+x tab/ })).toBeUndefined()
+  await focused.unmount()
+})
