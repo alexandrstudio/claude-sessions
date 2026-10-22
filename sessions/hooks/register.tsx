@@ -1,7 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { Editing, IndexState, SessionRow, View } from '../types'
+import type { Editing, IndexState, Scope, SessionRow, View } from '../types'
 import { INDEXER } from './indexer'
 import { ARCHIVER, MOVER, RESTORE } from './scripts'
 
@@ -34,6 +34,7 @@ const archiveStatus = atom({ plugin: 'sessions', key: 'archiveStatus' } as const
 // Which text field is open, if any. Fields appear only on request, so the
 // pane's keys go to its buttons the rest of the time.
 const editing = atom({ plugin: 'sessions', key: 'editing' } as const, null as Editing)
+const scope = atom({ plugin: 'sessions', key: 'scope' } as const, 'all' as Scope)
 
 const shellQuote = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`
 
@@ -181,6 +182,13 @@ async function setOption($: EngineInterface, field: string, value: string | bool
   await update($, notice, () => ('deny' in done && done.deny ? `Not saved: ${done.deny}` : 'Saved.'))
 }
 
+// The choice is kept across sessions, so someone who hides the archive keeps
+// it hidden.
+async function setScope($: EngineInterface, next: Scope) {
+  await update($, scope, () => next)
+  await $.store.set('scope', next)
+}
+
 async function go($: EngineInterface, next: View) {
   await update($, view, () => next)
   await update($, selected, () => null)
@@ -192,8 +200,15 @@ async function go($: EngineInterface, next: View) {
 const openPane = ($: EngineInterface) =>
   $.ui.open({ id: PANE, title: 'Sessions', focus: true, closeOnEscape: true })
 
+const SCOPES: [Scope, string, string][] = [
+  ['all', 'All', '1'],
+  ['active', 'Active', '2'],
+  ['archived', 'Archived', '3'],
+]
+
 const INFO: [string, string][] = [
   ['The list', 'Every session in ~/.claude/projects, plus the archive folder when one is set. Newest first; blue folders are on this Mac, yellow ones only in the archive, ● marks a session running now.'],
+  ['Show', '[ All ] lists active sessions (on this Mac) first and archived ones below them. [ Active ] hides the archive, [ Archived ] shows only archive-only sessions. The choice is remembered.'],
   ['Filter', 'Press [ Filter ] and type words to match title, first prompt or folder. :archived shows archive-only sessions, :local the ones not archived yet, :running the open ones. Enter keeps the filter; [ Clear ] removes it.'],
   ['A session', 'Click a row. [ Copy resume command ] puts it on the clipboard (paste it in a new terminal tab). [ Restore to this Mac ] brings back an archive-only session. [ Move to archive ] removes the copy on this Mac once the archive holds an identical one; press it twice.'],
   ['Archive', 'With an archive folder set, the mod copies new and changed sessions there when a session starts and every 6 hours (turn it off in settings). It never deletes from the archive. An archive on an external drive waits until the drive is plugged in.'],
@@ -221,6 +236,8 @@ export const register: Register = (on, options) => {
 
   on('command.run', { command: 'sessions' }, async $ => {
     await go($, 'list')
+    const kept = await $.store.get('scope')
+    if (kept === 'all' || kept === 'active' || kept === 'archived') await update($, scope, () => kept)
     void refresh($)
     await openPane($)
     // The surface grants focus only to an idle, empty prompt, which it is not
@@ -242,6 +259,7 @@ export const register: Register = (on, options) => {
     const current = await read($, view)
     const status = await read($, archiveStatus)
     const field = await read($, editing)
+    const shownScope = await read($, scope)
     const width = Math.max(30, e.props.bodyColumns)
 
     const back = <Button key="back" label="Back" hotkey="b" onPress={() => go($, 'list')} />
@@ -385,14 +403,31 @@ export const register: Register = (on, options) => {
       )
     }
 
+    const folderWidth = Math.min(32, Math.max(12, Math.floor(width * 0.3)))
     const shown = state.sessions.filter(s => matches(s, needle))
+    const active = shown.filter(s => s.isLive)
+    const archived = shown.filter(s => !s.isLive)
+    const rowsOf = (list: SessionRow[]) => [
+      ...list.slice(0, MAX_ROWS).map(s => (
+        <Button key={s.id} plain onPress={() => update($, selected, () => s.id)}>
+          <Text color="green">{s.isRunning ? '●' : ' '}</Text>
+          <Text dimColor>{ago(s.mtime).padStart(4)} </Text>
+          <Text color={s.isLive ? 'blue' : 'yellow'}>
+            {shortFolder(s).slice(0, folderWidth).padEnd(folderWidth)}
+          </Text>
+          {' '}
+          {(s.title ?? oneLine(s.first)).slice(0, Math.max(10, width - folderWidth - 16))}
+          <Text dimColor> {s.prompts}</Text>
+        </Button>
+      )),
+      ...(list.length > MAX_ROWS ? [<Text dimColor>… {list.length - MAX_ROWS} more, narrow the filter</Text>] : []),
+    ]
     const archivedOnly = state.sessions.filter(s => !s.isLive).length
     const header = state.isLoading
       ? 'Reading sessions…'
       : `${shown.length} of ${state.sessions.length} sessions` +
         (archivedOnly ? ` · ${archivedOnly} archive-only` : '') +
         (archiveDir === '' || state.isArchiveMounted ? '' : ' · archive folder not found')
-    const folderWidth = Math.min(32, Math.max(12, Math.floor(width * 0.3)))
 
     return (
       <Box flexDirection="column">
@@ -403,6 +438,18 @@ export const register: Register = (on, options) => {
           <Button key="to-settings" label="Settings" hotkey="s" onPress={() => go($, 'settings')} />
           <Button key="refresh" label="Refresh" hotkey="0" onPress={() => refresh($)} />
           <Text dimColor>{header}</Text>
+        </Box>
+        <Box flexDirection="row" gap={2}>
+          <Text dimColor>Show:</Text>
+          {SCOPES.map(([value, label, key]) => (
+            <Button
+              key={`show-${value}`}
+              label={label}
+              hotkey={key}
+              variant={shownScope === value ? 'primary' : 'secondary'}
+              onPress={() => setScope($, value)}
+            />
+          ))}
         </Box>
         {Input && field === 'filter' && (
           <Box flexDirection="row" gap={2}>
@@ -431,19 +478,20 @@ export const register: Register = (on, options) => {
           </Box>
         )}
         {state.error && <Text color="red">Could not read sessions: {state.error}</Text>}
-        {shown.slice(0, MAX_ROWS).map(s => (
-          <Button key={s.id} plain onPress={() => update($, selected, () => s.id)}>
-            <Text color="green">{s.isRunning ? '●' : ' '}</Text>
-            <Text dimColor>{ago(s.mtime).padStart(4)} </Text>
-            <Text color={s.isLive ? 'blue' : 'yellow'}>
-              {shortFolder(s).slice(0, folderWidth).padEnd(folderWidth)}
-            </Text>
-            {' '}
-            {(s.title ?? oneLine(s.first)).slice(0, Math.max(10, width - folderWidth - 16))}
-            <Text dimColor> {s.prompts}</Text>
-          </Button>
-        ))}
-        {shown.length > MAX_ROWS && <Text dimColor>… {shown.length - MAX_ROWS} more, narrow the filter</Text>}
+        {shownScope !== 'archived' && (
+          <Box flexDirection="column">
+            {shownScope === 'all' && <Text bold>Active · {active.length}</Text>}
+            {rowsOf(active)}
+          </Box>
+        )}
+        {shownScope !== 'active' && (shownScope === 'archived' || archived.length > 0) && (
+          <Box flexDirection="column">
+            {shownScope === 'all' && <Text> </Text>}
+            {shownScope === 'all' && <Text bold>Archived · {archived.length}</Text>}
+            {archived.length === 0 && <Text dimColor>No archive-only sessions.</Text>}
+            {rowsOf(archived)}
+          </Box>
+        )}
       </Box>
     )
   })

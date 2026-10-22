@@ -45,6 +45,10 @@ is running right now.
 Everything is a button: click it (Claude Code's fullscreen mode reports
 clicks) or Tab to it and press Enter.
 
+- **Show: [ All ] [ Active ] [ Archived ]**: *All* lists the sessions on this
+  machine first and the archive-only ones below them, each newest first.
+  *Active* hides the archive, *Archived* shows only the archive. The choice is
+  remembered for the next time.
 - **[ Filter ]** opens a text field: words match title, first prompt and
   folder; `:archived` shows archive-only sessions, `:local` the ones not
   archived yet, `:running` the open ones. Enter keeps the filter,
@@ -60,8 +64,8 @@ clicks) or Tab to it and press Enter.
 - **[ Info ]** explains all of this inside the pane; **[ Settings ]** holds the
   archive folder and the automatic archive.
 - Without a mouse: **ctrl+x tab** gives the pane the keys, each button's letter
-  is a shortcut (`f` filter, `i` info, `s` settings, `0` refresh, `c` copy,
-  `b` back), and Esc hands the keys back to the prompt.
+  is a shortcut (`f` filter, `i` info, `s` settings, `0` refresh, `1`/`2`/`3`
+  all/active/archived, `c` copy, `b` back), and Esc hands the keys back to the prompt.
 
 Requires `python3` on your `PATH` (it reads the transcripts and caches what it
 read in `~/.claude/cache/sessions-mod-index.json`).

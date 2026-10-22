@@ -45,6 +45,7 @@ function fakeHost(on: On, sessions = FIXTURE) {
   const runs: string[][] = []
   const saved: Record<string, unknown> = {}
   mock.env(on, { HOME: '/home/t' })
+  mock.store(on)
   on('process.run', async (_$, e) => {
     const argv = [...e.argv]
     runs.push(argv)
@@ -178,4 +179,23 @@ test('an unfocused pane says how to give it the keys', async ($, on) => {
   const focused = await $.ui.mount({ plugin: 'sessions', surface: 'terminal', ...PANE })
   expect(await focused.find({ text: /ctrl\+x tab/ })).toBeUndefined()
   await focused.unmount()
+})
+
+test('All splits active from archived; Active and Archived show one side', async ($, on) => {
+  fakeHost(on)
+  const ui = await $.ui.mount({ plugin: 'sessions', surface: 'terminal', ...PANE })
+  await ui.press({ key: 'refresh' })
+
+  const rows = async () => (await ui.findAll({ type: 'Button' })).map(b => b.key).filter(k => k?.startsWith('s-'))
+  expect(await ui.find({ text: /^Active · 2$/ })).toBeDefined()
+  expect(await ui.find({ text: /^Archived · 1$/ })).toBeDefined()
+  expect(await rows()).toEqual(['s-new', 's-open', 's-old'])
+
+  await ui.press({ key: 'show-active' })
+  expect(await rows()).toEqual(['s-new', 's-open'])
+  expect(await ui.find({ text: /^Archived · / })).toBeUndefined()
+
+  await ui.press({ key: 'show-archived' })
+  expect(await rows()).toEqual(['s-old'])
+  await ui.unmount()
 })

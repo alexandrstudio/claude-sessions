@@ -27,6 +27,10 @@ export type View = 'list' | 'info' | 'settings'
 
 export type Editing = 'filter' | 'folder' | null
 
+// Which sessions the list shows: all of them (active first, then archived),
+// only those on this machine, or only archive-only ones.
+export type Scope = 'all' | 'active' | 'archived'
+
 declare module 'claude-code' {
   interface PluginState {
     sessions: {
@@ -39,6 +43,7 @@ declare module 'claude-code' {
       confirmMove: string | null
       archiveStatus: string
       editing: Editing
+      scope: Scope
     }
   }
 }
